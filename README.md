@@ -7,8 +7,8 @@ cdk - npm install aws-cdk
 
 ### You need to bootstraping the project
 export AWS_ACCOUNT_NUMBER=  
-export AWS_REGION= 
-export AWS_ACCESS_KEY_ID=
+export AWS_REGION=  
+export AWS_ACCESS_KEY_ID=  
 export AWS_SECRET_ACCESS_KEY=  
 
 cdk bootstrap aws://account_number/region
