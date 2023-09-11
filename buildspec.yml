@@ -7,7 +7,9 @@ phases:
     commands:
       - npm install -g aws-cdk
       - npm install
-      - cd lambdas-funcions && npm install && cd ..
+      - cd lambdas-funcions
+      - npm install
+      - cd ..
   build:
     commands:
       - cdk synth
