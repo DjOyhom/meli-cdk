@@ -13,8 +13,9 @@ phases:
       - cdk synth
   pre_build:
     commands:
+      - npm install -g aws-cdk
       - cdk bootstrap
   build:
     commands:
-      - cdk synth
+      - npm install -g aws-cdk
       - cdk deploy --require-approval never
