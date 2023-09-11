@@ -12,5 +12,5 @@ phases:
     commands:
       - cdk bootstrap
   build:
-    commnands:
+    commands:
       - cdk deploy --require-approval never
