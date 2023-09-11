@@ -35,9 +35,9 @@ const documentation = {
             "body_parameters": {
                 "updates": "An array of update objects. Each object contains:",
                 "updates_object": {
-                    "currentShortCode": "The current short code to identify the long_url",
-                    "newShortCode": "Optional. The new short code to update",
-                    "newLongUrl": "Optional. The new URL to associate with the short code."
+                    "short_url_code": "The current short code to identify the long_url",
+                    "new_short_url_code": "Optional. The new short code to update",
+                    "new_long_url": "Optional. The new URL to associate with the short code."
                 }
             },
             "lambda_code": "./lambdas-functions/lambda_shortmanagement_put_bulk.js"

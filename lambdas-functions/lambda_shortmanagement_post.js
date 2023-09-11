@@ -39,7 +39,7 @@ exports.main = async function(event, context) {
         isSaved = await saveItem(item);
         
         if (isSaved) {
-          shortCodes.push({ shortCode, long_url });
+          shortCodes.push({ short_urls_code, long_url });
         } else if (short_urls.length) {
           throw new Error(`Failed to save custom short_url: ${shortCode}`);
         } else {
