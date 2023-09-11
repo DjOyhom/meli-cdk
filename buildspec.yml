@@ -8,9 +8,11 @@ phases:
       - npm install -g aws-cdk
       - npm install
       - cd lambdas-functions && npm install && cd ..
+      - cdk version
   pre_build:
     commands:
       - cdk bootstrap
   build:
     commands:
+      - cdk version
       - cdk deploy --require-approval never
