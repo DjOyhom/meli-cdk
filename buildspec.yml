@@ -13,7 +13,7 @@ phases:
       - cdk synth
   pre_build:
     commands:
-      - cdk bootstrap
+      - cdk bootstrap --force to override
   build:
     commnands:
       - cdk synth
