@@ -1,0 +1,22 @@
+version: 0.2
+env:
+  variables:
+    AWS_DEFAULT_REGION: "sa-east-1"
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+    commands:
+      - npm install -g aws-cdk
+      - npm install
+      - cd lambdas-funcions && npm install && cd ..
+  build:
+    commands:
+      - cdk synth
+  pre_build:
+    commands:
+      - cdk bootstrap
+  build:
+    commnands:
+      - cdk synth
+      - cdk deploy --require-approval never
