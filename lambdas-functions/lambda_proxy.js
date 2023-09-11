@@ -1,6 +1,6 @@
 const Redis = require('ioredis');
 let redisClient;
-const defaultUrl = 'https://www.mercadolibre.com.uy'; // URL por defecto como variable
+const defaultUrl = 'https://www.mercadolibre.com.uy';
 
 async function getRedisClient() {
   if (redisClient) {
@@ -21,26 +21,25 @@ async function getRedisClient() {
 }
 
 exports.main = async function(event, context) {
-  context.callbackWaitsForEmptyEventLoop = false; // No esperar a que se cierren recursos como conexiones a bases de datos
-  let client;
-  let redirectUrl = defaultUrl; // Usar URL por defecto como inicial
+  context.callbackWaitsForEmptyEventLoop = false; 
+  let redirectUrl = defaultUrl;  
 
-  try {
-    client = await getRedisClient();
-    
-    if (event.httpMethod === 'GET') {
-      const pathParts = event.path.split('/');
-      const shortCode = pathParts[pathParts.length - 1];
+  if (event.httpMethod === 'GET') {
+    const pathParts = event.path.split('/');
+    const shortCode = pathParts[pathParts.length - 1];
+    console.log(`ShortCode used: ${shortCode}`);
 
-      if (shortCode) {
+    if (shortCode) {
+      try {
+        const client = await getRedisClient();
         const urlFromRedis = await client.get(shortCode);
         if (urlFromRedis) {
           redirectUrl = urlFromRedis;
         }
+      } catch (error) {
+        console.error("Error occurred:", error);
       }
     }
-  } catch (error) {
-    console.error("Error occurred:", error); // Log del error
   }
 
   return {

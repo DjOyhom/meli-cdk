@@ -1,7 +1,9 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
+const lambda = new AWS.Lambda();
 
 const tableName = process.env.DYNAMO_TABLE;
+const lambda_sync = process.env.LAMBDA_SYNC;
 
 exports.main = async function(event, context) {
   try {
@@ -10,21 +12,51 @@ exports.main = async function(event, context) {
     }
 
     const body = JSON.parse(event.body);
-    const shortCode = body.shortCode;
-    const new_long_url = body.long_url;
+    const updates = body.updates || [];
 
-    if (!shortCode || !new_long_url) {
-      throw new Error('Both shortCode and new_long_url parameters must be provided.');
+    if (updates.length === 0) {
+      throw new Error('The updates parameter must be provided and non-empty.');
     }
 
-    await updateItem({ shortCode }, new_long_url);
+    for (const { shortCode, new_shortCode, new_long_url } of updates) {
+      if (!shortCode || (!new_shortCode && !new_long_url)) {
+        throw new Error('Both shortCode and either new_shortCode or new_long_url must be provided for each update.');
+      }
+
+      if (new_shortCode) {
+        const existingItem = await getItem({ shortCode: new_shortCode });
+        if (existingItem) {
+          return {
+            statusCode: 400,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ error: `The new_shortCode ${new_shortCode} already exists.` })
+          };
+        }
+        await deleteItem({ shortCode });
+        await saveItem({ shortCode: new_shortCode, long_url: new_long_url });
+      } else {
+        if (new_long_url) {
+          await updateItem({ shortCode }, new_long_url);
+        }
+      }
+    }
+
+    // Invoke the Redis synchronization Lambda
+    const invokeParams = {
+      FunctionName: lambda_sync,
+      InvocationType: 'Event'
+    };
+    
+    await lambda.invoke(invokeParams).promise();
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ message: 'Item successfully updated' })
+      body: JSON.stringify({ message: 'Items successfully updated' })
     };
 
   } catch (error) {
@@ -32,10 +64,19 @@ exports.main = async function(event, context) {
     return {
       statusCode: 400,
       headers: {},
-      body: JSON.stringify(body)
+      body: JSON.stringify({error: body})
     };
   }
 };
+
+async function getItem(key) {
+  const params = {
+    TableName: tableName,
+    Key: key
+  };
+  const result = await dynamo.get(params).promise();
+  return result.Item;
+}
 
 async function updateItem(key, new_long_url) {
   const params = {
@@ -49,4 +90,20 @@ async function updateItem(key, new_long_url) {
   };
 
   return dynamo.update(params).promise();
+}
+
+async function deleteItem(key) {
+  const params = {
+    TableName: tableName,
+    Key: key
+  };
+  return await dynamo.delete(params).promise();
+}
+
+async function saveItem(item) {
+  const params = {
+    TableName: tableName,
+    Item: item
+  };
+  return await dynamo.put(params).promise();
 }

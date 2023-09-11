@@ -1,8 +1,3 @@
-const AWS = require('aws-sdk');
-const dynamo = new AWS.DynamoDB.DocumentClient();
-
-const tableName = process.env.DYNAMO_TABLE;
-
 exports.main = async function(event, context) {
   try {
     if (event.httpMethod !== 'DELETE') {
@@ -10,20 +5,30 @@ exports.main = async function(event, context) {
     }
 
     const body = JSON.parse(event.body);
-    const shortCode = body.shortCode;
+    const shortCodes = body.shortCodes || []; // Asumimos que 'shortCodes' es una lista de códigos
 
-    if (!shortCode) {
-      throw new Error('shortCode parameter must be provided.');
+    if (shortCodes.length === 0) {
+      throw new Error('The shortCodes parameter must be provided and non-empty.');
     }
 
-    await deleteItem({ shortCode });
+    for (const shortCode of shortCodes) {
+      await deleteItem({ shortCode });
+    }
+
+    // Invoca la Lambda de sincronización con Redis
+    const invokeParams = {
+      FunctionName: lambda_sync,
+      InvocationType: 'Event'
+    };
+    
+    await lambda.invoke(invokeParams).promise();
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ message: 'Item successfully deleted' })
+      body: JSON.stringify({ message: 'Items successfully deleted' })
     };
 
   } catch (error) {

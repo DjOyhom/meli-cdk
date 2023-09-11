@@ -13,24 +13,40 @@ exports.main = async function(event, context) {
     }
 
     const body = JSON.parse(event.body);
-    const long_url = body.long_url;
-    let shortCode = body.shortCode;
+    const long_urls = body.long_urls || [];
+    const short_urls = body.short_urls_code || [];
+    let shortCodes = [];
 
-    if (!long_url) {
-      throw new Error('The long_url parameter must be provided.');
+    if (long_urls.length === 0) {
+      throw new Error('The long_urls parameter must be provided and non-empty.');
     }
 
-    if (!shortCode) {
-      // Generate a new shortCode
-      shortCode = generateShortCode();
+    if (short_urls.length !== 0 && short_urls.length !== long_urls.length) {
+      throw new Error('If short_urls are provided, their count must match the count of long_urls.');
     }
 
-    const item = {
-      shortCode,
-      long_url
-    };
-
-    await saveItem(item);
+    for (let i = 0; i < long_urls.length; i++) {
+      const long_url = long_urls[i];
+      let shortCode = short_urls.length ? short_urls[i] : generateShortCode();
+      
+      let isSaved = false;
+      while (!isSaved) {
+        const item = {
+          short_urls_code: shortCode,
+          long_url
+        };
+        
+        isSaved = await saveItem(item);
+        
+        if (isSaved) {
+          shortCodes.push({ shortCode, long_url });
+        } else if (short_urls.length) {
+          throw new Error(`Failed to save custom short_url: ${shortCode}`);
+        } else {
+          shortCode = generateShortCode(); // Generate a new shortCode and try again
+        }
+      }
+    }
 
     // Invoke the Redis synchronization Lambda
     const invokeParams = {
@@ -45,7 +61,7 @@ exports.main = async function(event, context) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(item)
+      body: JSON.stringify({ links: shortCodes })
     };
 
   } catch (error) {
@@ -58,14 +74,26 @@ exports.main = async function(event, context) {
   }
 };
 
+
 function generateShortCode() {
-  return crypto.randomBytes(6).toString('hex');
+  return crypto.randomBytes(3).toString('hex');  // 3 bytes generarán un string de 6 caracteres hexadecimales
 }
 
 async function saveItem(item) {
   const params = {
     TableName: tableName,
-    Item: item
+    Item: item,
+    ConditionExpression: 'attribute_not_exists(shortCode)' // Solo inserta si el shortCode no existe
   };
-  return await dynamo.put(params).promise();
+
+  try {
+    await dynamo.put(params).promise();
+  } catch (error) {
+    if (error.code === 'ConditionalCheckFailedException') {
+      // El shortCode ya existe en la base de datos, debemos manejar la colisión
+      return false;
+    }
+    throw error;
+  }
+  return true;
 }

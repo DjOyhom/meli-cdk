@@ -11,7 +11,7 @@ export AWS_REGION=
 export AWS_ACCESS_KEY_ID=  
 export AWS_SECRET_ACCESS_KEY=  
 
-cdk bootstrap aws://account_number/region
+cdk bootstrap aws://$env:AWS_ACCOUNT_NUMBER/$env:AWS_REGION
 
 ### Download dependencies
 npm install  
