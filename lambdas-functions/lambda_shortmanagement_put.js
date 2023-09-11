@@ -18,27 +18,27 @@ exports.main = async function(event, context) {
       throw new Error('The updates parameter must be provided and non-empty.');
     }
 
-    for (const { shortCode, new_shortCode, new_long_url } of updates) {
-      if (!shortCode || (!new_shortCode && !new_long_url)) {
-        throw new Error('Both shortCode and either new_shortCode or new_long_url must be provided for each update.');
+    for (const { short_url_code, new_short_url_code, new_long_url } of updates) {
+      if (!short_url_code || (!new_short_url_code && !new_long_url)) {
+        throw new Error('Both short_url_code and either new_short_url_code or new_long_url must be provided for each update.');
       }
 
-      if (new_shortCode) {
-        const existingItem = await getItem({ shortCode: new_shortCode });
+      if (new_short_url_code) {
+        const existingItem = await getItem({ short_url_code: new_short_url_code });
         if (existingItem) {
           return {
             statusCode: 400,
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ error: `The new_shortCode ${new_shortCode} already exists.` })
+            body: JSON.stringify({ error: `The new_short_url_code ${new_short_url_code} already exists.` })
           };
         }
-        await deleteItem({ shortCode });
-        await saveItem({ shortCode: new_shortCode, long_url: new_long_url });
+        await deleteItem({ short_url_code });
+        await saveItem({ short_url_code: new_short_url_code, long_url: new_long_url });
       } else {
         if (new_long_url) {
-          await updateItem({ shortCode }, new_long_url);
+          await updateItem({ short_url_code }, new_long_url);
         }
       }
     }

@@ -5,7 +5,7 @@ exports.main = async function(event, context) {
     }
 
     const body = JSON.parse(event.body);
-    const shortCodes = body.shortCodes || []; // Asumimos que 'shortCodes' es una lista de códigos
+    const shortCodes = body.short_urls_code || []; // Asumimos que 'shortCodes' es una lista de códigos
 
     if (shortCodes.length === 0) {
       throw new Error('The shortCodes parameter must be provided and non-empty.');
